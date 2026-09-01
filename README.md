@@ -1,6 +1,6 @@
 # Sueldos
 
-[![CI](https://github.com/Juancete/2026-logico-sueldos/actions/workflows/ci.yml/badge.svg)](https://github.com/Juancete/2026-logico-sueldos/actions/workflows/ci.yml)
+[![CI](https://github.com/Juancete/parcial-logico-2025/actions/workflows/ci.yml/badge.svg)](https://github.com/Juancete/parcial-logico-2025/actions/workflows/ci.yml)
 
 Resolución de un parcial de la materia Paradigmas de Programación (Paradigma Lógico), escrita en SWI-Prolog. El enunciado completo está en [2025 - Sueldos unificado.md](./2025%20-%20Sueldos%20unificado.md).
 
