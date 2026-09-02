@@ -1,5 +1,16 @@
 % ============================================================
-% Parcial: Sueldos
+% Parcial: Sueldos - solución alternativa
+%
+% Difiere de solucion.pl en dos decisiones:
+%
+% - Punto 1: el puesto y el sueldo van juntos en trabaja/3 en vez
+%   de repartirse en puesto/2 y sueldo/2. Con eso no puede existir
+%   una persona con puesto y sin sueldo (ni al revés), y trabaja/3
+%   queda como el generador explícito de personas para el punto 4.
+% - Punto 4: en vez de generar todos los subconjuntos y filtrar los
+%   que se pasan del presupuesto, la recursión va restando el
+%   presupuesto y corta la rama apenas queda negativo. Todo lo que
+%   se genera es solución.
 % ============================================================
 
 % ------------------------------------------------------------
@@ -13,24 +24,17 @@ trabajaEn(ventas, joshua).
 trabajaEn(logistica, ian).
 trabajaEn(logistica, sherri).
 
-% sueldo(Persona, Sueldo).
-sueldo(kyle, 50).
-sueldo(sherri, 60).
-sueldo(gus, 60).
-sueldo(ian, 40).
-sueldo(trisha, 90).
-sueldo(joshua, 55).
-
-% puesto(Persona, Puesto).
+% trabaja(Persona, Puesto, Sueldo).
+% El puesto es un functor por tipo:
 %   asalariado(Horas)
-%   jefe(ListaDeSubordinados)          
+%   jefe(ListaDeSubordinados)
 %   independiente(Oficio)
-puesto(kyle, asalariado(6)).
-puesto(sherri, asalariado(7)).
-puesto(gus, asalariado(8)).
-puesto(ian, jefe([kyle, rob, ginger])).
-puesto(trisha, jefe([ian, gus])).
-puesto(joshua, independiente(arquitecto)).
+trabaja(kyle,   asalariado(6),             50).
+trabaja(sherri, asalariado(7),             60).
+trabaja(gus,    asalariado(8),             60).
+trabaja(ian,    jefe([kyle, rob, ginger]), 40).
+trabaja(trisha, jefe([ian, gus]),          90).
+trabaja(joshua, independiente(arquitecto), 55).
 
 % sueldoPromedio(Horas, Promedio).
 sueldoPromedio(6, 45).
@@ -49,8 +53,7 @@ esPaganini(Departamento) :-
   forall(trabajaEn(Departamento, Persona), ganaBien(Persona)).
 
 ganaBien(Persona) :-
-  sueldo(Persona, Sueldo),
-  puesto(Persona, Puesto),
+  trabaja(Persona, Puesto, Sueldo),
   ganaBienSegunPuesto(Puesto, Sueldo).
 
 % Polimorfismo para todysssss
@@ -92,40 +95,40 @@ alguienQuiereTrabajarAhi(Departamento) :-
 % Punto 4: El juego de las sillas
 % ------------------------------------------------------------
 
-% reorganizacion(+Presupuesto, -Equipo)
+% reorganizacion(+Presupuesto, -Equipo, -Sobrante)
 % Equipo es un subconjunto de al menos 2 personas cuyos sueldos
-% no superan el presupuesto.
+% no superan el presupuesto. Sobrante es lo que queda (BONUS).
 
-reorganizacion(Presupuesto, Equipo) :-
-  findall(Persona, sueldo(Persona, _), Personas),
-  equipoAcotado(Personas, Presupuesto, Equipo).
+reorganizacion(Presupuesto, Equipo, Sobrante) :-
+  findall(Persona, trabaja(Persona, _, _), Personas),
+  equipoAcotado(Personas, Presupuesto, Equipo, Sobrante).
 
-% equipoAcotado(Candidatos, Presupuesto, Equipo)
-% Arma equipos de al menos 2 personas descontando el sueldo de cada
-% una del presupuesto a medida que la incorpora. Si en algún paso el
-% presupuesto queda negativo la rama se corta, así que nunca genera
-% un equipo que después haya que descartar.
+
+% equipoAcotado(Candidatos, Presupuesto, Equipo, Sobrante)
+% Arma equipos de al menos 2 personas restando el presupuesto a
+% medida que las incorpora. Si en algún paso el presupuesto queda
+% negativo la rama se corta, así que nunca genera un equipo que
+% después haya que descartar.
 % Las tres cláusulas son disjuntas (no hay soluciones repetidas):
 %   1) equipos de exactamente 2 personas que incluyen a la cabeza
 %   2) equipos de 3 o más personas que incluyen a la cabeza
 %   3) equipos que no incluyen a la cabeza
 
-equipoAcotado([Primero | Resto], Presupuesto, [Primero, Segundo]) :-
-  descontarSueldo(Primero, Presupuesto, Queda),
+equipoAcotado([Primero | Resto], Presupuesto, [Primero, Segundo], Sobrante) :-
+  presupuestoRestante(Primero, Presupuesto, Queda),
   member(Segundo, Resto),
-  descontarSueldo(Segundo, Queda, _).
+  presupuestoRestante(Segundo, Queda, Sobrante).
   
-equipoAcotado([Primero | Resto], Presupuesto, [Primero | Equipo]) :-
-  descontarSueldo(Primero, Presupuesto, Queda),
-  equipoAcotado(Resto, Queda, Equipo).
+equipoAcotado([Primero | Resto], Presupuesto, [Primero | Equipo], Sobrante) :-
+  presupuestoRestante(Primero, Presupuesto, Queda),
+  equipoAcotado(Resto, Queda, Equipo, Sobrante).
+equipoAcotado([_ | Resto], Presupuesto, Equipo, Sobrante) :-
+  equipoAcotado(Resto, Presupuesto, Equipo, Sobrante).
 
-equipoAcotado([_ | Resto], Presupuesto, Equipo) :-
-  equipoAcotado(Resto, Presupuesto, Equipo).
-
-% descontarSueldo(Persona, Presupuesto, Queda)
+% presupuestoRestante(Persona, Presupuesto, Queda)
 % Falla si el sueldo de la persona no entra en el presupuesto.
-descontarSueldo(Persona, Presupuesto, Queda) :-
-  sueldo(Persona, Sueldo),
+presupuestoRestante(Persona, Presupuesto, Queda) :-
+  trabaja(Persona, _, Sueldo),
   Queda is Presupuesto - Sueldo,
   Queda >= 0.
 
@@ -158,32 +161,34 @@ test(esta_en_problemas_es_inversible, set(Departamento == [logistica])) :-
   estaEnProblemas(Departamento).
 
 % --- Punto 4 ---
-test(equipo_kyle_trisha_entra_en_150, nondet) :- reorganizacion(150, [kyle, trisha]).
-test(equipo_kyle_joshua_entra_en_150, nondet) :- reorganizacion(150, [kyle, joshua]).
-test(equipo_kyle_ian_joshua_entra_en_150, nondet) :- reorganizacion(150, [kyle, ian, joshua]).
-test(equipo_kyle_ian_entra_en_150, nondet) :- reorganizacion(150, [kyle, ian]).
-test(equipo_kyle_sherri_ian_entra_justo_en_150, nondet) :- reorganizacion(150, [kyle, sherri, ian]).
+test(equipo_kyle_trisha_sobran_10, nondet) :- reorganizacion(150, [kyle, trisha], 10).
+test(equipo_kyle_joshua_sobran_45, nondet) :- reorganizacion(150, [kyle, joshua], 45).
+test(equipo_kyle_ian_joshua_sobran_5, nondet) :- reorganizacion(150, [kyle, ian, joshua], 5).
+test(equipo_kyle_ian_sobran_60, nondet) :- reorganizacion(150, [kyle, ian], 60).
+test(equipo_kyle_sherri_ian_no_sobra_nada, nondet) :- reorganizacion(150, [kyle, sherri, ian], 0).
 test(no_se_puede_armar_equipo_que_supera_el_presupuesto, fail) :-
-  reorganizacion(150, [trisha, sherri]).
+  reorganizacion(150, [trisha, sherri], _).
 test(no_se_puede_armar_equipo_de_una_sola_persona, fail) :-
-  reorganizacion(150, [kyle]).
+  reorganizacion(150, [kyle], _).
 test(equipo_acotado_genera_solo_equipos_de_2_o_mas_personas,
      set(Equipo == [[kyle, sherri], [kyle, sherri, gus], [kyle, gus], [sherri, gus]])) :-
-  equipoAcotado([kyle, sherri, gus], 1000, Equipo).
+  equipoAcotado([kyle, sherri, gus], 1000, Equipo, _).
 test(equipo_acotado_no_repite_soluciones) :-
-  findall(Equipo, equipoAcotado([kyle, sherri, gus, ian], 1000, Equipo), Equipos),
+  findall(Equipo, equipoAcotado([kyle, sherri, gus, ian], 1000, Equipo, _), Equipos),
   length(Equipos, 11),
   sort(Equipos, SinRepetidos),
   length(SinRepetidos, 11).
 test(equipo_acotado_no_genera_nada_con_menos_de_2_personas, fail) :-
-  equipoAcotado([kyle], 1000, _).
+  equipoAcotado([kyle], 1000, _, _).
 test(equipo_acotado_corta_la_rama_apenas_se_pasa_del_presupuesto,
-     set(Equipo == [[kyle, ian], [sherri, ian]])) :-
-  equipoAcotado([kyle, sherri, ian, trisha], 100, Equipo).
-test(con_presupuesto_150_hay_18_equipos_posibles) :-
-  aggregate_all(count, reorganizacion(150, _), 18).
+     set(Equipo-Sobrante == [[kyle, ian]-10, [sherri, ian]-0])) :-
+  equipoAcotado([kyle, sherri, ian, trisha], 100, Equipo, Sobrante).
+test(equipo_acotado_solo_genera_soluciones_validas) :-
+  findall(Sobrante, equipoAcotado([kyle, sherri, gus, ian, trisha, joshua], 150, _, Sobrante), Sobrantes),
+  length(Sobrantes, 18),
+  forall(member(Sobrante, Sobrantes), Sobrante >= 0).
 test(con_presupuesto_100_las_opciones_son_las_esperadas,
      set(Equipo == [[kyle, ian], [sherri, ian], [gus, ian], [ian, joshua]])) :-
-  reorganizacion(100, Equipo).
+  reorganizacion(100, Equipo, _).
 
 :- end_tests(sueldos).

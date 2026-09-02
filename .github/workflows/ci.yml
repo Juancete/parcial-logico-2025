@@ -23,3 +23,6 @@ jobs:
 
       - name: Correr los tests
         run: swipl -g run_tests -t halt solucion.pl
+
+      - name: Correr los tests de la solución alternativa
+        run: swipl -g run_tests -t halt solucionAlternativa.pl
