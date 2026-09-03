@@ -4,15 +4,6 @@
 
 Resolución de un parcial de la materia Paradigmas de Programación (Paradigma Lógico), escrita en SWI-Prolog. El enunciado completo está en [2025 - Sueldos unificado.md](./2025%20-%20Sueldos%20unificado.md).
 
-## Cómo correr los tests
-
-```
-swipl -g run_tests -t halt solucion.pl
-swipl -g run_tests -t halt solucionAlternativa.pl
-```
-
-Requiere tener instalado SWI-Prolog (probado con la versión 9.2.x).
-
 ## Estructura
 
 El modelo resuelve los cuatro puntos del enunciado:
@@ -28,3 +19,6 @@ El modelo resuelve los cuatro puntos del enunciado:
 
 - **Punto 1**: el puesto y el sueldo van juntos en `trabaja(Persona, Puesto, Sueldo)` en vez de repartirse en `puesto/2` y `sueldo/2`. Así no puede existir una persona con puesto y sin sueldo, y `trabaja/3` es el generador explícito de personas que usa el punto 4.
 - **Punto 4**: usa un generador general de subconjuntos que poda por presupuesto y deja afuera la condición de cantidad: `reorganizacion/3` aplica `length/2` para exigir al menos dos personas. También resuelve el bonus devolviendo cuánta plata sobra; `equipoAcotado/4` calcula ese sobrante en la misma recursión.
+
+## Análisis del diseño
+Te dejamos un [breve resumen](./ANALISIS_DISENIO.md) de algunas cuestiones y decisiones de diseño que estuvimos charlando en clase. 
