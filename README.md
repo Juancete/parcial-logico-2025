@@ -27,4 +27,4 @@ El modelo resuelve los cuatro puntos del enunciado:
 [solucionAlternativa.pl](./solucionAlternativa.pl) resuelve los mismos cuatro puntos con dos decisiones distintas:
 
 - **Punto 1**: el puesto y el sueldo van juntos en `trabaja(Persona, Puesto, Sueldo)` en vez de repartirse en `puesto/2` y `sueldo/2`. Así no puede existir una persona con puesto y sin sueldo, y `trabaja/3` es el generador explícito de personas que usa el punto 4.
-- **Punto 4**: resuelve también el bonus. `reorganizacion/3` devuelve además cuánta plata sobra del presupuesto, y `equipoAcotado/4` lo calcula en la misma recursión que arma el equipo, porque el presupuesto restante es lo que ya se usa para podar.
+- **Punto 4**: usa un generador general de subconjuntos que poda por presupuesto y deja afuera la condición de cantidad: `reorganizacion/3` aplica `length/2` para exigir al menos dos personas. También resuelve el bonus devolviendo cuánta plata sobra; `equipoAcotado/4` calcula ese sobrante en la misma recursión.

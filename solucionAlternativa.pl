@@ -9,8 +9,8 @@
 %   queda como el generador explícito de personas para el punto 4.
 % - Punto 4: en vez de generar todos los subconjuntos y filtrar los
 %   que se pasan del presupuesto, la recursión va restando el
-%   presupuesto y corta la rama apenas queda negativo. Todo lo que
-%   se genera es solución.
+%   presupuesto y corta la rama apenas queda negativo. La cantidad
+%   mínima de integrantes se valida por separado con length/2.
 % ============================================================
 
 % ------------------------------------------------------------
@@ -101,26 +101,19 @@ alguienQuiereTrabajarAhi(Departamento) :-
 
 reorganizacion(Presupuesto, Equipo, Sobrante) :-
   findall(Persona, trabaja(Persona, _, _), Personas),
-  equipoAcotado(Personas, Presupuesto, Equipo, Sobrante).
+  equipoAcotado(Personas, Presupuesto, Equipo, Sobrante),
+  length(Equipo, CantidadDePersonas),
+  CantidadDePersonas >= 2.
 
 
 % equipoAcotado(Candidatos, Presupuesto, Equipo, Sobrante)
-% Arma equipos de al menos 2 personas restando el presupuesto a
-% medida que las incorpora. Si en algún paso el presupuesto queda
-% negativo la rama se corta, así que nunca genera un equipo que
-% después haya que descartar.
-% Las tres cláusulas son disjuntas (no hay soluciones repetidas):
-%   1) equipos de exactamente 2 personas que incluyen a la cabeza
-%   2) equipos de 3 o más personas que incluyen a la cabeza
-%   3) equipos que no incluyen a la cabeza
+% Arma subconjuntos restando el presupuesto a medida que incorpora
+% personas. Si en algún paso el presupuesto queda negativo, la rama
+% se corta. La cantidad mínima de integrantes se valida afuera.
 
-equipoAcotado([Primero | Resto], Presupuesto, [Primero, Segundo], Sobrante) :-
-  presupuestoRestante(Primero, Presupuesto, Queda),
-  member(Segundo, Resto),
-  presupuestoRestante(Segundo, Queda, Sobrante).
-  
-equipoAcotado([Primero | Resto], Presupuesto, [Primero | Equipo], Sobrante) :-
-  presupuestoRestante(Primero, Presupuesto, Queda),
+equipoAcotado([], Presupuesto, [], Presupuesto).
+equipoAcotado([Persona | Resto], Presupuesto, [Persona | Equipo], Sobrante) :-
+  presupuestoRestante(Persona, Presupuesto, Queda),
   equipoAcotado(Resto, Queda, Equipo, Sobrante).
 equipoAcotado([_ | Resto], Presupuesto, Equipo, Sobrante) :-
   equipoAcotado(Resto, Presupuesto, Equipo, Sobrante).
@@ -170,23 +163,20 @@ test(no_se_puede_armar_equipo_que_supera_el_presupuesto, fail) :-
   reorganizacion(150, [trisha, sherri], _).
 test(no_se_puede_armar_equipo_de_una_sola_persona, fail) :-
   reorganizacion(150, [kyle], _).
-test(equipo_acotado_genera_solo_equipos_de_2_o_mas_personas,
-     set(Equipo == [[kyle, sherri], [kyle, sherri, gus], [kyle, gus], [sherri, gus]])) :-
+test(equipo_acotado_genera_los_subconjuntos_posibles,
+     set(Equipo == [[], [kyle], [kyle, sherri], [kyle, sherri, gus],
+                    [kyle, gus], [sherri], [sherri, gus], [gus]])) :-
   equipoAcotado([kyle, sherri, gus], 1000, Equipo, _).
-test(equipo_acotado_no_repite_soluciones) :-
-  findall(Equipo, equipoAcotado([kyle, sherri, gus, ian], 1000, Equipo, _), Equipos),
-  length(Equipos, 11),
-  sort(Equipos, SinRepetidos),
-  length(SinRepetidos, 11).
-test(equipo_acotado_no_genera_nada_con_menos_de_2_personas, fail) :-
-  equipoAcotado([kyle], 1000, _, _).
 test(equipo_acotado_corta_la_rama_apenas_se_pasa_del_presupuesto,
-     set(Equipo-Sobrante == [[kyle, ian]-10, [sherri, ian]-0])) :-
+     set(Equipo-Sobrante == [[]-100, [kyle]-50, [kyle, ian]-10,
+                             [sherri]-40, [sherri, ian]-0, [ian]-60,
+                             [trisha]-10])) :-
   equipoAcotado([kyle, sherri, ian, trisha], 100, Equipo, Sobrante).
-test(equipo_acotado_solo_genera_soluciones_validas) :-
-  findall(Sobrante, equipoAcotado([kyle, sherri, gus, ian, trisha, joshua], 150, _, Sobrante), Sobrantes),
-  length(Sobrantes, 18),
-  forall(member(Sobrante, Sobrantes), Sobrante >= 0).
+test(equipo_acotado_solo_genera_sobrantes_no_negativos) :-
+  forall(
+    equipoAcotado([kyle, sherri, gus, ian, trisha, joshua], 150, _, Sobrante),
+    Sobrante >= 0
+  ).
 test(con_presupuesto_100_las_opciones_son_las_esperadas,
      set(Equipo == [[kyle, ian], [sherri, ian], [gus, ian], [ian, joshua]])) :-
   reorganizacion(100, Equipo, _).
